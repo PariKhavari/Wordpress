@@ -101,7 +101,7 @@ Steps to deploy this setup on a cloud VM (e.g. a fresh Ubuntu instance):
    ```
 2. **Clone the repository** onto the VM:
    ```bash
-   git clone <repository-url>
+   git clone -b <feature-name> https://github.com/<dein-username>/<repo-name>.git
    cd <repository-folder>
    ```
 3. **Create the environment file** from the template and fill in your own values:
