@@ -78,7 +78,8 @@ Both services are configured with `restart: always`, so they automatically resta
 
 To properly simulate a crash (not a manual stop), kill the main process *inside* the container instead of stopping the container itself:
 ```bash
-docker exec wordpress kill -9 1
+docker exec wordpress kill -TERM 1
+docker inspect --format='{{.State.StartedAt}}' wordpress 
 docker ps
 ```
 The `wordpress` container should show a new `CREATED`/`STATUS` timestamp shortly after, confirming it was automatically restarted.
