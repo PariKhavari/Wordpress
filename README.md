@@ -32,13 +32,17 @@ This repository provides a containerized WordPress environment built with Docker
 
 **Steps:**
 ```bash
-git clone <repository-url>
-cd <repository-folder>
+git clone https://github.com/PariKhavari/Wordpress.git
+cd Wordpress
 cp .env.example .env
 # edit .env and set your own values
+docker compose build
 docker compose up -d
 ```
 Then open `http://localhost:8080` (or `http://<vm-ip>:8080` on a cloud VM) in your browser and complete the WordPress setup wizard.
+
+> [!TIP]
+> Keep a note of the admin username and password you set during the WordPress setup wizard — you'll need them for the login test.
 
 ## Usage
 
@@ -54,6 +58,9 @@ All configurable values are passed via environment variables defined in `.env` (
 | `MYSQL_ROOT_PASSWORD` | Root password for the MySQL container | — |
 
 No credentials are hardcoded in `docker-compose.yaml`; only variable references (`${VARIABLE_NAME}`) are used.
+
+> [!IMPORTANT]
+> Never commit your actual `.env` file to the repository. It is excluded via `.gitignore` — only `.env.example` (with placeholder values) should be tracked.
 
 ### Changing the Port
 By default, WordPress is exposed on host port `8080`. To use a different port, edit the `ports` section under the `wordpress` service in `docker-compose.yaml`:
@@ -73,16 +80,25 @@ docker volume rm <project-folder>_db_data
 docker compose up -d
 ```
 
-### Restart Behavior
-Both services are configured with `restart: always`, so they automatically restart after an unexpected crash or a host reboot. Note: a manual `docker stop` or `docker kill` on the container itself is treated by Docker as an intentional stop and will **not** trigger an automatic restart — this only applies to crashes.
+> [!WARNING]
+> Removing the `db_data` volume permanently deletes all WordPress content (posts, users, settings). This action cannot be undone.
 
-To properly simulate a crash (not a manual stop), kill the main process *inside* the container instead of stopping the container itself:
+### Restart Behavior
+Both services are configured with `restart: always`, so they automatically restart whenever their main process exits — whether due to a crash or a host reboot. Two things to keep in mind when testing this:
+
+- A manual `docker stop`/`docker kill` **on the container itself** is treated by Docker as an intentional stop and will **not** trigger an automatic restart.
+- Sending `SIGKILL` to PID 1 *from inside* the container's own PID namespace (e.g. via `docker exec ... kill -9 1`) is ignored by the kernel — this is standard Linux behavior protecting PID 1. Use `SIGTERM` instead, which Apache handles and exits on cleanly.
+
+> [!NOTE]
+> This PID 1 signal-handling behavior is a general Linux/container characteristic, not specific to this project's setup.
+
+To properly simulate a crash and verify the restart:
 ```bash
 docker exec wordpress kill -TERM 1
-docker inspect --format='{{.State.StartedAt}}' wordpress 
+docker inspect --format='{{.State.StartedAt}}' wordpress
 docker ps
 ```
-The `wordpress` container should show a new `CREATED`/`STATUS` timestamp shortly after, confirming it was automatically restarted.
+Compare the `StartedAt` timestamp before and after — a newer timestamp confirms the container was automatically restarted.
 
 **Useful commands:**
 ```bash
@@ -114,6 +130,10 @@ Steps to deploy this setup on a cloud VM (e.g. a fresh Ubuntu instance):
    ```bash
    sudo ufw allow 8080/tcp
    ```
+
+   > [!CAUTION]
+   > Opening a port to the public internet exposes the service to anyone who finds it. Restrict access (e.g. by source IP) where possible, especially before entering real credentials.
+
 5. **Start the containers** in the background:
    ```bash
    docker compose up -d
