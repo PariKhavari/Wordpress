@@ -1,6 +1,6 @@
 services:
   wordpress:
-    image: wordpress:latest
+    image: wordpress:7.1.0-apache
     container_name: wordpress
     restart: unless-stopped
     ports:
@@ -13,6 +13,8 @@ services:
       WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
     depends_on:
       - db
+    volumes:
+      - wordpress_data:/var/www/html
     networks:
       - wordpress-net
     healthcheck:
@@ -44,6 +46,7 @@ services:
 
 volumes:
   db_data:
+  wordpress_data:
 
 networks:
   wordpress-net:
