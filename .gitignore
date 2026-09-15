@@ -29,7 +29,6 @@ wp-config.php
 
 # Environments
 .env
-.env.*
 
 # Log files
 *.log
